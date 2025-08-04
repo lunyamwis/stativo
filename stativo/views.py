@@ -13,7 +13,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from smolagents import tool, HfApiModel, CodeAgent
+from smolagents import tool, HfApiModel, CodeAgent,OpenAIServerModel
+from PIL import Image
+from smolagents import Tool
+from smolagents.utils import make_image_url, encode_image_base64
+from typing import Any
 from huggingface_hub import login
 from dotenv import load_dotenv, find_dotenv
 
@@ -104,6 +108,44 @@ def plot_channel_metrics_chart(df: pd.DataFrame, metric: str = "LTV:CAC", top_n:
     return f"https://stativiz.com{settings.MEDIA_URL}charts/{chart_id}.png"
 
 
+
+def check_reasoning_and_plot(final_answer, agent_memory):
+    final_answer
+    multimodal_model = OpenAIServerModel(
+        "gpt-4o",
+    )
+    filepath = f"https://stativiz.com{settings.MEDIA_URL}charts/other_chart_type.png"
+    assert os.path.exists(filepath), f"Make sure to save the plot under {filepath}!"
+    image = Image.open(filepath)
+    prompt = (
+        f"Here is a user-given task and the agent steps: {agent_memory.get_succinct_steps()}. Now here is the plot that was made."
+        "Please check that the reasoning process and plot are correct: do they correctly answer the given task?"
+        "First list reasons why yes/no, then write your final decision: PASS in caps lock if it is satisfactory, FAIL if it is not."
+        "Don't be harsh: if the plot mostly solves the task, it should pass."
+        "To pass, a plot should be made using plt and not any other method (scatter_map looks nicer)."
+        "Also, any run that invents numbers should fail."
+    )
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": prompt,
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": make_image_url(encode_image_base64(image))},
+                },
+            ],
+        }
+    ]
+    output = multimodal_model(messages).content
+    print("Feedback: ", output)
+    if "FAIL" in output:
+        raise Exception(output)
+    return True
+
 # --- Django View --- #
 class BooksyLLMAnalysisAPIView(APIView):
 
@@ -132,6 +174,8 @@ class BooksyLLMAnalysisAPIView(APIView):
                     "pandas",
                     "numpy",
                 ],
+                verbosity_level=2,
+                final_answer_checks=[check_reasoning_and_plot],
                 max_steps=10,
             )
 
