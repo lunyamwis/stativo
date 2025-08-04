@@ -14,6 +14,12 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from smolagents import tool, HfApiModel, CodeAgent
+from huggingface_hub import login
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
+
+login(os.getenv("HUGGINGFACE_API_KEY"))
 
 # --- Tools --- #
 @tool
