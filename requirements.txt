@@ -2,12 +2,19 @@
 
 #python 3.11
 
+django
+django-cors-headers
+djangorestframework
+djangorestframework-simplejwt
+
 pandas==2.2.3
 numpy==2.2.3
+matplotlib
 ipywidgets==8.1.5
 plotly==6.0.1
 kaleido==0.2.1
 pillow==11.1.0
+
 #shapely
 #geopandas
 #json
