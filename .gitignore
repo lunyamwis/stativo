@@ -144,6 +144,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# all csv files
+*.csv
+
 # Media
 media/
 
