@@ -101,7 +101,7 @@ def plot_channel_metrics_chart(df: pd.DataFrame, metric: str = "LTV:CAC", top_n:
     plt.savefig(file_path)
     plt.close()
 
-    return f"{settings.MEDIA_URL}charts/{chart_id}.png"
+    return f"{settings.MEDIA_ROOT}charts/{chart_id}.png"
 
 
 # --- Django View --- #
