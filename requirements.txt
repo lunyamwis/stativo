@@ -7,6 +7,9 @@ django-cors-headers
 djangorestframework
 djangorestframework-simplejwt
 
+gunicorn
+psycopg2-binary
+
 pandas==2.2.3
 numpy==2.2.3
 matplotlib
