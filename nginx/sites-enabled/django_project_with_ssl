@@ -1,0 +1,37 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name adventproclaimer.com;
+    location / {
+        rewrite ^ https://$host$request_uri? permanent;
+    }
+}
+
+
+server {
+    listen 80;
+    listen [::]:80;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name adventproclaimer.com;
+    charset utf-8;
+    client_max_body_size 100M;
+
+    ssl_certificate /etc/letsencrypt/live/adventproclaimer.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/adventproclaimer.com/privkey.pem;
+    
+    location ~ /.well-known  {
+        allow all;
+    }
+
+    location /static/ {
+        alias /www/static/;
+    }
+
+    location / {
+        proxy_pass http://web:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
