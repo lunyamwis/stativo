@@ -1,8 +1,11 @@
+import re
+import shutil
 from django.shortcuts import render
 
 # Create your views here.
 # views.py
 import os
+import glob
 import uuid
 import random
 import pandas as pd
@@ -13,11 +16,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from smolagents import tool, HfApiModel, CodeAgent,OpenAIServerModel
-from PIL import Image
-from smolagents import Tool
-from smolagents.utils import make_image_url, encode_image_base64
-from typing import Any
+from smolagents import tool, HfApiModel, CodeAgent
 from huggingface_hub import login
 from dotenv import load_dotenv, find_dotenv
 
@@ -69,82 +68,69 @@ def simulate_revenue_metrics_explicit(n: int = 100) -> pd.DataFrame:
 
     return pd.DataFrame(data)
 
-@tool
-def plot_channel_metrics_chart(df: pd.DataFrame, metric: str = "LTV:CAC", top_n: int = 5) -> str:
-    """
-    Plot a bar chart of acquisition channels by a given metric (e.g. LTV:CAC), save locally, and return its URL.
+# @tool
+# def plot_channel_metrics_chart(df: pd.DataFrame, metric: str = "LTV:CAC", top_n: int = 5) -> str:
+#     """
+#     Plot a bar chart of acquisition channels by a given metric (e.g. LTV:CAC), save locally, and return its URL.
 
-    Args:
-        df (pd.DataFrame): DataFrame with channel metrics.
-        metric (str): The column/metric to plot (e.g. "LTV:CAC").
-        top_n (int): Number of top rows to display.
+#     Args:
+#         df (pd.DataFrame): DataFrame with channel metrics.
+#         metric (str): The column/metric to plot (e.g. "LTV:CAC").
+#         top_n (int): Number of top rows to display.
 
-    Returns:
-        str: URL path to the saved chart image.
-    """
-    top = df.sort_values(by=metric, ascending=False).head(top_n)
+#     Returns:
+#         str: URL path to the saved chart image.
+#     """
+#     top = df.sort_values(by=metric, ascending=False).head(top_n)
 
-    plt.figure(figsize=(10, 5))
-    bars = plt.bar(top["channel_name"], top[metric], color='skyblue')
-    plt.title(f"Top {top_n} Channels by {metric}")
-    plt.xlabel("Channel")
-    plt.ylabel(metric)
-    plt.xticks(rotation=30)
-    plt.tight_layout()
+#     plt.figure(figsize=(10, 5))
+#     bars = plt.bar(top["channel_name"], top[metric], color='skyblue')
+#     plt.title(f"Top {top_n} Channels by {metric}")
+#     plt.xlabel("Channel")
+#     plt.ylabel(metric)
+#     plt.xticks(rotation=30)
+#     plt.tight_layout()
 
-    for bar in bars:
-        height = bar.get_height()
-        plt.annotate(f"{height:.1f}", xy=(bar.get_x() + bar.get_width() / 2, height),
-                     xytext=(0, 5), textcoords="offset points", ha='center')
+#     for bar in bars:
+#         height = bar.get_height()
+#         plt.annotate(f"{height:.1f}", xy=(bar.get_x() + bar.get_width() / 2, height),
+#                      xytext=(0, 5), textcoords="offset points", ha='center')
 
-    chart_id = uuid.uuid4().hex
-    chart_path = os.path.join(settings.MEDIA_ROOT, "charts")
-    os.makedirs(chart_path, exist_ok=True)
-    file_path = os.path.join(chart_path, f"{chart_id}.png")
+#     chart_id = uuid.uuid4().hex
+#     chart_path = os.path.join(settings.MEDIA_ROOT, "charts")
+#     os.makedirs(chart_path, exist_ok=True)
+#     file_path = os.path.join(chart_path, f"{chart_id}.png")
 
-    plt.savefig(file_path)
-    plt.close()
+#     plt.savefig(file_path)
+#     plt.close()
 
-    return f"https://stativiz.com{settings.MEDIA_URL}charts/{chart_id}.png"
+#     return {
+#         "url":f"https://stativiz.com{settings.MEDIA_URL}charts/{chart_id}.png",
+#         "key_info": {
+#             "top_channels": top[["channel_name", metric]].to_dict(orient="records"),
+#             "metric": metric
+#         },
+#         "explanation": "",
+#     }
 
 
 
-def check_reasoning_and_plot(final_answer, agent_memory):
-    final_answer
-    multimodal_model = OpenAIServerModel(
-        "gpt-4o",
-    )
-    filepath = f"https://stativiz.com{settings.MEDIA_URL}charts/other_chart_type.png"
-    assert os.path.exists(filepath), f"Make sure to save the plot under {filepath}!"
-    image = Image.open(filepath)
-    prompt = (
-        f"Here is a user-given task and the agent steps: {agent_memory.get_succinct_steps()}. Now here is the plot that was made."
-        "Please check that the reasoning process and plot are correct: do they correctly answer the given task?"
-        "First list reasons why yes/no, then write your final decision: PASS in caps lock if it is satisfactory, FAIL if it is not."
-        "Don't be harsh: if the plot mostly solves the task, it should pass."
-        "To pass, a plot should be made using plt and not any other method (scatter_map looks nicer)."
-        "Also, any run that invents numbers should fail."
-    )
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": prompt,
-                },
-                {
-                    "type": "image_url",
-                    "image_url": {"url": make_image_url(encode_image_base64(image))},
-                },
-            ],
-        }
-    ]
-    output = multimodal_model(messages).content
-    print("Feedback: ", output)
-    if "FAIL" in output:
-        raise Exception(output)
-    return True
+def move_png_files_glob(source_dir, destination_dir):
+    """Move all PNG files using glob pattern matching"""
+    os.makedirs(destination_dir, exist_ok=True)
+    
+    # Find all PNG files (case insensitive)
+    png_files = glob.glob(os.path.join(source_dir, "*.png")) + \
+                glob.glob(os.path.join(source_dir, "*.PNG"))
+    
+    for png_file in png_files:
+        filename = os.path.basename(png_file)
+        dest_path = os.path.join(destination_dir, filename)
+        shutil.move(png_file, dest_path)
+        print(f"Moved: {filename}")
+    
+    return [os.path.basename(f) for f in png_files]
+
 
 # --- Django View --- #
 class BooksyLLMAnalysisAPIView(APIView):
@@ -168,25 +154,28 @@ class BooksyLLMAnalysisAPIView(APIView):
 
             agent = CodeAgent(
                 model=model,
-                tools=[simulate_revenue_metrics_explicit, plot_channel_metrics_chart],
+                tools=[simulate_revenue_metrics_explicit
+                       ],
                 additional_authorized_imports=[
                     "matplotlib.pyplot",
                     "pandas",
                     "numpy",
                 ],
-                verbosity_level=2,
-                final_answer_checks=[check_reasoning_and_plot],
                 max_steps=10,
             )
 
             # Run agent
             task = user_query
             output = agent.run(task, additional_args={"suppliers_data": booksy_df})
+            generated_chart_list = move_png_files_glob(settings.BASE_DIR, os.path.join(settings.MEDIA_ROOT, "charts"))
+                
+
             # import pdb;pdb.set_trace()
             # Return output
             return Response({
                 "query": user_query,
                 "result": output,
+                "generated_chart_list": [f"https://stativiz.com/media/charts/{url}" for url in generated_chart_list]
             })
 
         except Exception as e:
