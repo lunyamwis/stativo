@@ -1,9 +1,24 @@
 server {
     listen 80;
     listen [::]:80;
+    server_name stativiz.com;
+    location / {
+        rewrite ^ https://$host$request_uri? permanent;
+    }
+}
+
+
+server {
+    listen 80;
+    listen [::]:80;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name stativiz.com;
     charset utf-8;
     client_max_body_size 100M;
 
+    ssl_certificate /etc/letsencrypt/live/stativiz.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/stativiz.com/privkey.pem;
     
     location ~ /.well-known  {
         allow all;
