@@ -1,7 +1,8 @@
 # urls.py
 from django.urls import path
-from .views import BooksyLLMAnalysisAPIView
+from . import views
 
 urlpatterns = [
-    path("metrics/agent/", BooksyLLMAnalysisAPIView.as_view(), name="booksy-agent"),
+    path("",views.home, name="home"),
+    path("metrics/agent/", views.BooksyLLMAnalysisAPIView.as_view(), name="booksy-agent"),
 ]

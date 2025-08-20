@@ -1,0 +1,1309 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>🧪 Ultra Data Analysis Experimentation Engine with Advanced Dashboard</title>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  /* ==== RESET ==== */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+  }
+  html, body {
+    height: 100%;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(160deg, #f0fbff 0%, #d2e9ff 50%, #a9d5ff 100%);
+    color: #0b3d91;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body, button, input, select, textarea {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  button {
+    cursor: pointer;
+    user-select: none;
+    border: none;
+    background: #0b3d91;
+    color: white;
+    border-radius: 24px;
+    padding: 0.6rem 1.4rem;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  button:hover, button:focus {
+    background-color: #0d46a0;
+    box-shadow: 0 0 12px #2b63c1aa;
+    outline: none;
+  }
+  a {
+    color: #0b3d91;
+    text-decoration: none;
+    transition: text-decoration 0.2s ease;
+  }
+  a:hover, a:focus {
+    text-decoration: underline;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #5a8ede, #365cad);
+    border-radius: 14px;
+    border: 4px solid #d2e9ff;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-track {
+    background: #d2e9ff;
+  }
+
+  /* LAYOUT GRID */
+  body {
+    display: grid;
+    grid-template-columns: 140px 1fr 360px;
+    grid-template-rows: 64px 1fr 120px;
+    grid-template-areas:
+      "sidebar header header"
+      "sidebar main assistant"
+      "sidebar footer footer";
+    gap: 6px;
+    height: 100vh;
+  }
+
+  /* SIDEBAR NAV */
+  nav#sidebar {
+    grid-area: sidebar;
+    background-color: #192f6a;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 12px;
+    padding-top: 0.5rem;
+    box-shadow: 4px 0 12px #162867cc inset;
+  }
+  nav#sidebar button {
+    width: 100%;
+    height: 48px;
+    margin: 0.5rem 0;
+    border-radius: 14px;
+    background: transparent;
+    color: #c7d3ee;
+    font-size: 1.05rem;
+    font-weight: 700;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    line-height: 1;
+    gap: 12px;
+    padding-left: 14px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  nav#sidebar button.active,
+  nav#sidebar button:hover {
+    background-color: #4189c5;
+    color: white;
+  }
+  nav#sidebar button:focus {
+    outline: 3px solid #74a9f7;
+    outline-offset: 2px;
+  }
+  nav#sidebar button svg {
+    pointer-events: none;
+    fill: currentColor;
+    flex-shrink: 0;
+  }
+  nav#sidebar button .tab-label {
+    user-select: none;
+  }
+
+  /* HEADER */
+  header#header {
+    grid-area: header;
+    background: linear-gradient(90deg, #115293, #063970);
+    color: white;
+    font-weight: 900;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    box-shadow: 0 0 12px #083467cc;
+    user-select: none;
+  }
+
+  /* FOOTER */
+  footer#footer {
+    grid-area: footer;
+    background-color: #115293cc;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    box-shadow: 0 -2px 12px #083467cc;
+  }
+
+  /* MAIN AREA */
+  main#main {
+    grid-area: main;
+    overflow-y: auto;
+    background: #f0f9ff;
+    padding: 2rem 2.2rem;
+    border-radius: 16px;
+    box-shadow: inset 0 0 10px #9bbde2aa;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ASSISTANT PANEL */
+  aside#assistant {
+    grid-area: assistant;
+    background: #d0e4ffcc;
+    border-left: 3px solid #90b4e2;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
+  }
+  #assistantHeader {
+    font-weight: 900;
+    font-size: 1.28rem;
+    color: #184f9d;
+    margin-bottom: 16px;
+    user-select: none;
+  }
+  #chatWindow {
+    flex-grow: 1;
+    overflow-y: auto;
+    background-color: white;
+    border: 2px solid #90b4e2;
+    border-radius: 16px;
+    padding: 14px 18px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #184f9d;
+  }
+  .chat-message {
+    margin-bottom: 14px;
+    max-width: 90%;
+    padding: 8px 14px;
+    border-radius: 20px;
+    line-height: 1.3;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
+  .chat-message.user {
+    background: #184f9dcc;
+    color: #e0efff;
+    align-self: flex-end;
+  }
+  .chat-message.ai {
+    background: #90b6e6cc;
+    color: #0a2c5e;
+    align-self: flex-start;
+  }
+  #inputArea {
+    margin-top: 12px;
+    display: flex;
+    gap: 0.6rem;
+  }
+  #userInput {
+    flex-grow: 1;
+    border-radius: 24px;
+    border: 2px solid #184f9d;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    font-family: inherit;
+    font-weight: 600;
+  }
+  #sendBtn, #voiceToggleBtn {
+    width: 48px;
+    height: 48px;
+    background-color: #184f9d;
+    border-radius: 50%;
+    color: white;
+    font-weight: 900;
+    font-size: 1.3rem;
+    transition: background-color 0.3s ease;
+  }
+  #sendBtn:hover, #voiceToggleBtn:hover,
+  #sendBtn:focus, #voiceToggleBtn:focus {
+    background-color: #0b2e5f;
+    outline: none;
+  }
+
+  /* === Tabs top control === */
+  #tabs {
+    display: flex;
+    gap: 24px;
+    user-select: none;
+    margin-bottom: 1.6rem;
+    border-bottom: 3px solid #184f9d;
+  }
+
+  #tabs button.tab-btn {
+    background: transparent;
+    border: none;
+    border-bottom: 4px solid transparent;
+    padding: 6px 18px 10px;
+    font-weight: 700;
+    color: #184f9dcc;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: border-color 0.3s;
+  }
+
+  #tabs button.tab-btn:hover,
+  #tabs button.tab-btn:focus {
+    color: #0b2e5f;
+    outline: none;
+  }
+  #tabs button.tab-btn.active {
+    border-color: #0b2e5f;
+    color: #0b2e5f;
+  }
+
+  /* === Content panels === */
+  section.panel {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    padding-right: 8px; /* scrollbar spacer */
+  }
+  section.panel.active {
+    display: flex;
+  }
+
+  /* === Section headings inside panels === */
+  section.panel > h3 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #184f9d;
+    margin-bottom: 1rem;
+    user-select: none;
+  }
+
+  /* === Data Upload Section (Dashboard) === */
+  #dataUploadContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 24px;
+  }
+  #datasetPreviewWrapper {
+    background-color: white;
+    border-radius: 12px;
+    border: 2px solid #90b4e2;
+    box-shadow: inset 0 0 16px #a2befd66;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  table#datasetPreview {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: monospace;
+    table-layout: fixed;
+  }
+  table#datasetPreview thead th {
+    background-color: #184f9dcc;
+    color: white;
+    padding: 0.5rem;
+    border: 1px solid #cbdaf9;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+  table#datasetPreview tbody td {
+    padding: 0.45rem 0.7rem;
+    border: 1px solid #e2e7fc;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+  table#datasetPreview tbody tr:nth-child(odd) {
+    background: #dcdff7cc;
+  }
+
+  /* === New dashboard widgets layout === */
+  #dashboardWidgets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-auto-rows: 180px;
+    gap: 16px;
+    margin-bottom: 2rem;
+  }
+  .widget {
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px #a5b9d8cc;
+    padding: 1rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .widget h4 {
+    font-weight: 900;
+    font-size: 1.15rem;
+    color: #0b3d91;
+    margin-bottom: 0.7rem;
+    user-select: none;
+  }
+  .statistic-value {
+    font-size: 2.75rem;
+    font-weight: 900;
+    color: #0b3d91;
+    letter-spacing: 1px;
+    font-family: "Segoe UI Black", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  }
+  .progressbar-container {
+    margin-top: 1rem;
+  }
+  progress {
+    width: 100%;
+    height: 16px;
+    border-radius: 14px;
+    overflow: hidden;
+    appearance: none;
+  }
+  progress::-webkit-progress-bar {
+    background-color: #ebf2fb;
+  }
+  progress::-webkit-progress-value {
+    background-color: #0b3d91;
+    border-radius: 12px;
+  }
+  progress::-moz-progress-bar {
+    background-color: #0b3d91;
+    border-radius: 12px;
+  }
+
+  /* === Experiment Manager Tab === */
+  #experimentInstructions {
+    font-style: italic;
+    color: #2266cccc;
+    margin-bottom: 0.6rem;
+  }
+  textarea#experimentCmdInput {
+    width: 100%;
+    min-height: 130px;
+    border-radius: 12px;
+    border: 2px solid #184f9d;
+    font-family: monospace;
+    font-size: 1rem;
+    padding: 1rem;
+    resize: vertical;
+    color: #184f9dcc;
+  }
+  #experimentStatus {
+    margin-top: 1rem;
+    background: #e0f1ffcc;
+    border-left: 5px solid #184f9d;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-family: monospace;
+    font-size: 0.95rem;
+    color: #0b3d91;
+    white-space: pre-wrap;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  #runExperimentBtn {
+    width: fit-content;
+    margin-top: 1rem;
+  }
+  #cancelExperimentBtn {
+    margin-left: 1rem;
+    background-color: #a11e1e;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 24px;
+    font-weight: 700;
+    font-size: 1rem;
+    user-select: none;
+    display: none;
+  }
+  #cancelExperimentBtn:hover, #cancelExperimentBtn:focus {
+    background-color: #820f0f;
+  }
+
+  /* === Reporting & VISUALIZATION TAB === */
+  #chartsAndTableWrapper {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    justify-content: flex-start;
+  }
+  #resultsChartCanvas {
+    flex: 1 1 65%;
+    min-width: 300px;
+    max-width: 680px;
+    border: 2px solid #184f9d;
+    border-radius: 12px;
+    background: white;
+  }
+  #resultsTableWrapper {
+    flex: 1 1 30%;
+    min-width: 280px;
+    max-height: 420px;
+    overflow-y: auto;
+    border-radius: 12px;
+    border: 2px solid #184f9d;
+    background: white;
+  }
+  #resultsTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: monospace;
+  }
+  #resultsTable th, #resultsTable td {
+    padding: 0.4rem 0.7rem;
+    border: 1px solid #c7d5f3;
+    text-align: left;
+  }
+  #resultsTable th {
+    background-color: #184f9dcc;
+    color: white;
+    font-weight: 900;
+  }
+  #generateReportBtn {
+    margin-top: 16px;
+  }
+  #reportTextArea {
+    width: 100%;
+    min-height: 160px;
+    border-radius: 14px;
+    border: 2px solid #184f9d;
+    padding: 1rem;
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 1rem;
+    resize: vertical;
+  }
+
+</style>
+
+</head>
+<body>
+
+<!-- Sidebar Navigation -->
+<nav id="sidebar" role="navigation" aria-label="Main Application Navigation" tabindex="0">
+  <button class="tab-btn active" aria-label="Dashboard Tab" aria-selected="true" role="tab" id="tab-dashboard">
+    <svg aria-hidden="true" focusable="false" width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M0 0h4v16H0V0zM12 0h4v16h-4V0zM6 4h4v8H6V4z"/></svg>
+    <span class="tab-label">Dashboard</span>
+  </button>
+  <button class="tab-btn" aria-label="Experiment Manager Tab" aria-selected="false" role="tab" id="tab-experiment">
+    <svg aria-hidden="true" focusable="false" width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M8 12L0 4l1.5-2 6.5 6.5L14.5 0l1.5 1.5L8 12z"/></svg>
+    <span class="tab-label">Experiment</span>
+  </button>
+  <button class="tab-btn" aria-label="Reporting & Visualization Tab" aria-selected="false" role="tab" id="tab-reporting">
+    <svg aria-hidden="true" focusable="false" width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M1 9h14v4H1v-4zm14-3v2H1V6h14zM1 1h14v4H1V1z"/></svg>
+    <span class="tab-label">Reports</span>
+  </button>
+  <button class="tab-btn" aria-label="AI Assistant Tab" aria-selected="false" role="tab" id="tab-assistant">
+    <svg aria-hidden="true" focusable="false" width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M8 1a5 5 0 1 0 0 10A5 5 0 0 0 8 1zm0 1.5a3.505 3.505 0 0 1 3.5 3.5c0 1.207-.655 2.248-1.604 2.8l1.37 1.37a.5.5 0 0 1-.708.708l-1.37-1.37A3.505 3.505 0 0 1 4.5 6.5 3.5 3.5 0 0 1 8 2.5z"/></svg>
+    <span class="tab-label">AI Assistant</span>
+  </button>
+</nav>
+
+<!-- Header -->
+<header id="header">
+  <h1 tabindex="0" aria-label="Application Title">🧪 Data Analysis Experimentation Engine</h1>
+  <button id="resetAppBtn" aria-label="Reset the entire application">Reset App</button>
+</header>
+
+<!-- Main Panel with tabbed contents -->
+<main id="main" role="main" aria-live="polite" tabindex="0">
+  <!-- DASHBOARD PANEL -->
+  <section id="panel-dashboard" class="panel active" role="tabpanel" aria-labelledby="tab-dashboard" tabindex="0" aria-hidden="false">
+    <h2>Dashboard & Data Upload</h2>
+
+    <div id="dataUploadContainer" aria-label="Dataset upload section">
+      <label for="csvFileInput">Upload CSV File</label>
+      <input type="file" id="csvFileInput" accept=".csv,text/csv" aria-describedby="csvFileDesc" />
+      <p id="csvFileDesc" style="font-style: italic; color: #155397;">Select a CSV file containing your dataset</p>
+    </div>
+
+    <div id="dashboardWidgets" aria-label="Key dashboard metrics and charts" role="region" tabindex="0">
+      <!-- Widgets will be inserted here -->
+    </div>
+
+    <div id="datasetPreviewWrapper" aria-label="Preview of uploaded dataset">
+      <table id="datasetPreview" role="grid" aria-describedby="csvFileDesc" aria-live="polite"></table>
+    </div>
+  </section>
+
+  <!-- EXPERIMENT MANAGER PANEL -->
+  <section id="panel-experiment" class="panel" role="tabpanel" aria-labelledby="tab-experiment" tabindex="0" aria-hidden="true">
+    <h2>Experiment Manager</h2>
+    <p id="experimentInstructions" aria-live="polite">
+      Enter Kaggle notebook ID/repos (e.g. <code>user/notebook-name</code>) and customize commands to run your experiment.
+    </p>
+    <label for="experimentCmdInput">Experiment Commands/Notes</label>
+    <textarea id="experimentCmdInput" aria-multiline="true" spellcheck="false" placeholder="e.g. Load dataset, preprocess, run model training..."></textarea>
+    <button id="runExperimentBtn" aria-live="polite" aria-atomic="true" aria-describedby="experimentStatus">Run Experiment on Kaggle Notebook</button>
+    <button id="cancelExperimentBtn" aria-live="polite" aria-atomic="true">Cancel Running Experiment</button>
+    <pre id="experimentStatus" role="log" aria-live="polite" aria-atomic="false" style="background:#e7f0fd;padding:12px;border-radius: 11px;margin-top: 16px; height: 240px; overflow-y: auto; font-family: monospace; font-size: 0.9rem; white-space: pre-wrap;">
+Experiment logs will appear here...
+    </pre>
+  </section>
+
+  <!-- REPORTING & VISUALIZATION PANEL -->
+  <section id="panel-reporting" class="panel" role="tabpanel" aria-labelledby="tab-reporting" tabindex="0" aria-hidden="true">
+    <h2>Reporting & Visualization</h2>
+
+    <div id="chartsAndTableWrapper" aria-label="Data visualization and results">
+      <canvas id="resultsChartCanvas" width="600" height="320" aria-label="Chart visualization area" role="img" tabindex="0"></canvas>
+      <div id="resultsTableWrapper" aria-label="Data results table" role="region" tabindex="0" style="max-height: 400px; overflow-y: auto;">
+        <table id="resultsTable" role="grid" aria-live="polite" aria-atomic="false" summary="Tabular data generated from analysis"></table>
+      </div>
+    </div>
+
+    <label for="reportTextArea" style="margin-top: 1rem; display: block;">Report Summary</label>
+    <textarea id="reportTextArea" placeholder="Write report summary or findings here..." aria-label="Report summary editor" spellcheck="true"></textarea>
+    <button id="generateReportBtn" style="margin-top: 8px;">Generate & Download Report</button>
+  </section>
+</main>
+
+<!-- AI Assistant Sidebar -->
+<aside id="assistant" role="complementary" aria-label="AI Assistant Chat Panel" tabindex="0">
+  <div id="assistantHeader" tabindex="0" aria-live="polite" aria-atomic="true">🤖 AI Assistant</div>
+  <div id="chatWindow" role="log" aria-live="polite" aria-atomic="false" aria-relevant="additions" tabindex="0"></div>
+  <div id="inputArea">
+    <input type="text" id="userInput" aria-label="Input message to AI assistant" autocomplete="off" spellcheck="false" placeholder="Ask me anything..." />
+    <button id="sendBtn" aria-label="Send message">➤</button>
+    <button id="voiceToggleBtn" aria-label="Toggle voice input">🎙️</button>
+  </div>
+</aside>
+
+<!-- Tooltip -->
+<div id="tooltip" role="tooltip" aria-hidden="true"></div>
+
+<script>
+  (function(){
+    'use strict';
+
+    // ----------- DOM Elements ----------
+    const tabs = document.querySelectorAll('nav#sidebar button.tab-btn');
+    const panels = document.querySelectorAll('main#main section.panel');
+    const resetBtn = document.getElementById('resetAppBtn');
+
+    // Dashboard elements
+    const csvFileInput = document.getElementById('csvFileInput');
+    const datasetPreviewTable = document.getElementById('datasetPreview');
+    const dashboardWidgets = document.getElementById('dashboardWidgets');
+
+    // Experiment elements
+    const experimentCmdInput = document.getElementById('experimentCmdInput');
+    const runExperimentBtn = document.getElementById('runExperimentBtn');
+    const cancelExperimentBtn = document.getElementById('cancelExperimentBtn');
+    const experimentStatus = document.getElementById('experimentStatus');
+
+    // Reporting & viz elements
+    const resultsChartCanvas = document.getElementById('resultsChartCanvas');
+    const resultsTable = document.getElementById('resultsTable');
+    const reportTextArea = document.getElementById('reportTextArea');
+    const generateReportBtn = document.getElementById('generateReportBtn');
+
+    // AI assistant elements
+    const chatWindow = document.getElementById('chatWindow');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+
+    // Tooltip
+    const tooltip = document.getElementById('tooltip');
+
+    // State
+    let activeTabId = 'tab-dashboard';
+    let csvData = null;
+    let csvHeaders = [];
+    let csvRows = [];
+    let experimentRunning = false;
+    let experimentCancelFlag = false;
+    let experimentLogLines = [];
+
+    // Canvas context for charts
+    const ctx = resultsChartCanvas.getContext('2d');
+    let mainChart = null;
+
+    // Voice recognition setup
+    let recognizer = null;
+    let voiceActive = false;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+
+    // --- Utility Functions ---
+
+    function debounce(fn, delay=300) {
+      let timer;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    // Animate counter for KPI values
+    function animateCounter(element, start, end, duration=1200) {
+      const range = end - start;
+      let startTimestamp = null;
+      function step(timestamp) {
+        if(!startTimestamp) startTimestamp=timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration,1);
+        element.textContent = Math.floor(progress * range + start).toLocaleString();
+        if(progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      }
+      window.requestAnimationFrame(step);
+    }
+
+    // Sanitize text to prevent XSS
+    function sanitizeText(text) {
+      return String(text)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;');
+    }
+
+    // Update tooltip position and text
+    function showTooltip(msg, x, y) {
+      tooltip.textContent = msg;
+      tooltip.style.left = `${x + 14}px`;
+      tooltip.style.top = `${y + 14}px`;
+      tooltip.style.visibility = 'visible';
+      tooltip.setAttribute('aria-hidden', 'false');
+    }
+    function hideTooltip() {
+      tooltip.style.visibility = 'hidden';
+      tooltip.setAttribute('aria-hidden', 'true');
+    }
+
+    // Switch tabs and panels (with ARIA)
+    function switchTab(targetId) {
+      tabs.forEach(tab => {
+        const selected = tab.id === targetId;
+        tab.classList.toggle('active', selected);
+        tab.setAttribute('aria-selected', selected.toString());
+      });
+      panels.forEach(panel => {
+        const panelId = 'panel-' + targetId.split('-')[1];
+        const active = panel.id === panelId;
+        panel.classList.toggle('active', active);
+        panel.setAttribute('aria-hidden', (!active).toString());
+      });
+      activeTabId = targetId;
+      const activePanel = document.getElementById('panel-' + targetId.split('-')[1]);
+      if(activePanel) activePanel.focus();
+    }
+
+    // Parse CSV (handling quoted commas)
+    function parseCSV(text) {
+      const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+      if(lines.length === 0) return { headers: [], rows: [] };
+      const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(h => h.trim().replace(/^"(.+(?="$))"$/, '$1'));
+      const rows = [];
+      for(let i=1; i<lines.length; i++) {
+        const fields = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(f => f.trim().replace(/^"(.+(?="$))"$/, '$1'));
+        if(fields.length !== headers.length) continue;
+        const row = {};
+        headers.forEach((h, idx) => {
+          row[h] = fields[idx];
+        });
+        rows.push(row);
+      }
+      return { headers, rows };
+    }
+
+    // Render dataset preview table (max 7 rows)
+    function renderDatasetPreview() {
+      datasetPreviewTable.innerHTML = '';
+      if(!csvData) {
+        const noDataRow = document.createElement('tr');
+        const th = document.createElement('th');
+        th.scope = 'col';
+        th.textContent = 'No dataset loaded';
+        noDataRow.appendChild(th);
+        datasetPreviewTable.appendChild(noDataRow);
+        clearDashboardWidgets();
+        return;
+      }
+      const thead = document.createElement('thead');
+      const headRow = document.createElement('tr');
+      csvHeaders.forEach(h => {
+        const th = document.createElement('th');
+        th.scope = 'col';
+        th.textContent = h;
+        th.title = h;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      datasetPreviewTable.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      csvRows.slice(0,7).forEach(row => {
+        const tr = document.createElement('tr');
+        csvHeaders.forEach(col => {
+          const td = document.createElement('td');
+          td.textContent = row[col];
+          td.title = row[col];
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      datasetPreviewTable.appendChild(tbody);
+
+      fillDashboardWidgets();
+    }
+
+    // Dashboard Widgets
+
+    function clearDashboardWidgets() {
+      dashboardWidgets.innerHTML = '';
+      if(mainChart) {
+        mainChart.destroy();
+        mainChart = null;
+      }
+    }
+
+    // Calculate some summary KPIs
+    function calculateKPIs() {
+      if(!csvData || csvRows.length === 0) return null;
+
+      // For demo: numeric count, unique counts for first 3 columns, sample sums for numeric columns
+      const kpis = {};
+
+      kpis.totalRecords = csvRows.length;
+      // Unique count for first column
+      const col0 = csvHeaders[0];
+      const uniques0 = new Set(csvRows.map(r=> r[col0]));
+      kpis.uniqueCountCol0 = uniques0.size;
+
+      // Sum for 2nd and 3rd numeric columns if they exist
+      for(let i=1; i<=2; i++) {
+        if(csvHeaders.length > i) {
+          const colName = csvHeaders[i];
+          const vals = csvRows
+            .map(r => parseFloat(r[colName]))
+            .filter(v => !isNaN(v));
+          kpis[`sum_${colName}`] = vals.reduce((a,b)=>a+b,0).toFixed(2);
+          kpis[`avg_${colName}`] = (vals.reduce((a,b)=>a+b,0) / vals.length).toFixed(2);
+        }
+      }
+      return kpis;
+    }
+
+    // Fill dashboard widgets area with KPI cards and main chart
+    function fillDashboardWidgets() {
+      clearDashboardWidgets();
+      const kpis = calculateKPIs();
+      if(!kpis) return;
+
+      // Create KPI cards
+      const cardsData = [
+        { title: 'Total Records', value: kpis.totalRecords },
+        { title: `Unique ${csvHeaders[0] || 'Values'}`, value: kpis.uniqueCountCol0 },
+      ];
+      if(kpis['sum_'+csvHeaders[1]]) {
+        cardsData.push({title: `Sum ${csvHeaders[1]}`, value: kpis['sum_'+csvHeaders[1]]});
+        cardsData.push({title: `Average ${csvHeaders[1]}`, value: kpis['avg_'+csvHeaders[1]]});
+      }
+
+      if(cardsData.length === 0) return;
+
+      cardsData.forEach(card => {
+        const widgetDiv = document.createElement('div');
+        widgetDiv.className = 'widget';
+
+        const titleEl = document.createElement('h4');
+        titleEl.textContent = card.title;
+        const valEl = document.createElement('div');
+        valEl.className = 'statistic-value';
+
+        // Animate counter for numeric values
+        const numVal = parseFloat(card.value);
+        if(!isNaN(numVal)) {
+          valEl.textContent = '0';
+          widgetDiv.appendChild(titleEl);
+          widgetDiv.appendChild(valEl);
+          dashboardWidgets.appendChild(widgetDiv);
+          animateCounter(valEl, 0, numVal);
+        } else {
+          valEl.textContent = card.value;
+          widgetDiv.appendChild(titleEl);
+          widgetDiv.appendChild(valEl);
+          dashboardWidgets.appendChild(widgetDiv);
+        }
+      });
+
+      // Create main chart widget (dynamically add canvas with id)
+      const chartWidget = document.createElement('div');
+      chartWidget.className = 'widget';
+      chartWidget.style.gridColumn = 'span 2';  // wide widget
+
+      const chartTitle = document.createElement('h4');
+      chartTitle.textContent = 'Sample Distribution Chart';
+      chartWidget.appendChild(chartTitle);
+
+      const canvasEl = document.createElement('canvas');
+      canvasEl.id = 'mainDashboardChart';
+      canvasEl.style.height = '150px';
+      canvasEl.style.width = '100%';
+      chartWidget.appendChild(canvasEl);
+
+      dashboardWidgets.appendChild(chartWidget);
+
+      // Build chart.js bar chart with column 0 frequencies for top 10 categories
+      createMainDashboardChart(canvasEl);
+    }
+
+    function createMainDashboardChart(canvasEl) {
+      if(mainChart) {
+        mainChart.destroy();
+        mainChart = null;
+      }
+      if(!csvData) return;
+
+      const freqMap = new Map();
+      csvRows.forEach(r => {
+        const key = r[csvHeaders[0]];
+        freqMap.set(key, (freqMap.get(key) || 0) + 1);
+      });
+
+      const sortedFreq = [...freqMap.entries()].sort((a,b) => b[1]-a[1]);
+      const top10 = sortedFreq.slice(0,10);
+      const labels = top10.map(e => e[0]);
+      const data = top10.map(e => e[1]);
+
+      mainChart = new Chart(canvasEl.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: `Frequency of ${csvHeaders[0]}`,
+            data,
+            borderWidth: 1,
+            backgroundColor: 'rgba(11,61,145,0.7)',
+            borderColor: 'rgba(11,61,145,1)',
+            hoverBackgroundColor: 'rgba(24,87,196,0.9)',
+            hoverBorderColor: 'rgba(24,87,196,1)'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              enabled: true,
+              backgroundColor: '#0b3d91',
+              titleColor: '#ffffff',
+              bodyColor: '#cddcff'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0 }
+            }
+          }
+        }
+      });
+    }
+
+    // Append line to experiment log
+    function appendExperimentLog(line) {
+      experimentLogLines.push(line);
+      if(experimentLogLines.length > 250) experimentLogLines.shift();
+      experimentStatus.textContent = experimentLogLines.join('\n');
+      experimentStatus.scrollTop = experimentStatus.scrollHeight;
+    }
+
+    // Clear experiment log
+    function clearExperimentLog() {
+      experimentLogLines.length = 0;
+      experimentStatus.textContent = 'Experiment logs will appear here...';
+    }
+
+    // --- Simulate running experiment on Kaggle ---
+    async function simulateKaggleExperiment(commands) {
+      appendExperimentLog(`Starting experiment with commands:\n${commands}\n`);
+      experimentRunning = true;
+      experimentCancelFlag = false;
+      cancelExperimentBtn.style.display = 'inline-block';
+
+      try {
+        // Stage 1 - upload dataset
+        appendExperimentLog('Uploading dataset to Kaggle...');
+        await delayOrCancel(1500);
+        if(experimentCancelFlag) throw new Error('Experiment canceled.');
+
+        // Stage 2 - run notebook
+        appendExperimentLog('Running Kaggle notebook job...');
+        await delayOrCancel(2500);
+        if(experimentCancelFlag) throw new Error('Experiment canceled.');
+
+        // Stage 3 - fetch results
+        appendExperimentLog('Fetching results...');
+        await delayOrCancel(2000);
+        if(experimentCancelFlag) throw new Error('Experiment canceled.');
+
+        // Generate dummy chart and table results
+        generateDummyChartAndTable();
+
+        appendExperimentLog('Experiment completed successfully.');
+      } catch (e) {
+        if(e.message === 'Experiment canceled.') {
+          appendExperimentLog('Experiment was canceled by the user.');
+        } else {
+          appendExperimentLog('Error occurred: ' + e.message);
+        }
+      } finally {
+        experimentRunning = false;
+        cancelExperimentBtn.style.display = 'none';
+      }
+    }
+
+    // Helper to await delay that can be canceled
+    function delayOrCancel(ms) {
+      return new Promise((resolve, reject) => {
+        const id = setTimeout(resolve, ms);
+        if(experimentCancelFlag) {
+          clearTimeout(id);
+          reject(new Error('Experiment canceled.'));
+        }
+      });
+    }
+
+    // Generate dummy line chart and results table to simulate outputs
+    function generateDummyChartAndTable() {
+      // Clear canvas
+      ctx.clearRect(0, 0, resultsChartCanvas.width, resultsChartCanvas.height);
+
+      // Simple sine-wave data dummy
+      const points = 30;
+      const amplitude = 40;
+      const baseLine = 130;
+
+      // Draw axes
+      ctx.strokeStyle = '#0b3d91';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(50, 20);
+      ctx.lineTo(50, 160);
+      ctx.lineTo(590, 160);
+      ctx.stroke();
+
+      // Draw sine wave
+      ctx.strokeStyle = '#184f9d';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for(let i=0; i<=points; i++) {
+        const px = 50 + (540 / points) * i;
+        const py = baseLine - Math.sin(i / 3) * amplitude;
+        if(i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // Draw points with shadow
+      for(let i=0; i<=points; i++) {
+        const px = 50 + (540 / points) * i;
+        const py = baseLine - Math.sin(i / 3) * amplitude;
+        ctx.beginPath();
+        ctx.shadowColor = 'rgba(24,137,221,0.7)';
+        ctx.shadowBlur = 7;
+        ctx.fillStyle = '#0b3d91';
+        ctx.arc(px, py, 5, 0, Math.PI*2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // Populate table with dummy summary
+      const thead = resultsTable.querySelector('thead') || document.createElement('thead');
+      const tbody = resultsTable.querySelector('tbody') || document.createElement('tbody');
+      thead.innerHTML = '';
+      tbody.innerHTML = '';
+
+      const headerRow = document.createElement('tr');
+      ['Index', 'Metric', 'Value'].forEach(h => {
+        const th = document.createElement('th');
+        th.textContent = h;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+
+      for(let i = 0; i < 10; i++) {
+        const tr = document.createElement('tr');
+        const idxCell = document.createElement('td');
+        idxCell.textContent = i+1;
+        const metricCell = document.createElement('td');
+        metricCell.textContent = `Test Metric ${i + 1}`;
+        const valueCell = document.createElement('td');
+        valueCell.textContent = (Math.random() * 100).toFixed(3);
+        tr.append(idxCell, metricCell, valueCell);
+        tbody.appendChild(tr);
+      }
+
+      if(!resultsTable.querySelector('thead')) resultsTable.appendChild(thead);
+      if(!resultsTable.querySelector('tbody')) resultsTable.appendChild(tbody);
+    }
+
+    // Delay helper
+    function delay(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // ------- Report generation -------
+    generateReportBtn.addEventListener('click', () => {
+      const reportText = reportTextArea.value.trim();
+      if(!reportText) {
+        alert('Please write the report content before generating the report file.');
+        return;
+      }
+      let report = '--- Data Analysis Report ---\n\n';
+      report += 'Report Content:\n' + reportText + '\n\n';
+      report += 'Generated On: ' + new Date().toLocaleString() + '\n';
+
+      // Prepare blob and trigger download
+      const blob = new Blob([report], {type: 'text/plain'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'DataAnalysisReport_' + Date.now() + '.txt';
+      a.click();
+
+      setTimeout(() => URL.revokeObjectURL(url), 300000);
+    });
+
+    // ------- Tab switching -------
+    tabs.forEach(tab => {
+      tab.addEventListener('click', e => {
+        switchTab(e.currentTarget.id);
+      });
+      tab.addEventListener('mouseenter', (e) => {
+        const label = e.currentTarget.getAttribute('aria-label');
+        if(label) {
+          const rect = e.currentTarget.getBoundingClientRect();
+          showTooltip(label, rect.right + 10, rect.top + rect.height/2);
+        }
+      });
+      tab.addEventListener('mouseleave', hideTooltip);
+    });
+
+    // ------- CSV file input -----
+    csvFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const validTypes = ['text/csv', 'application/vnd.ms-excel'];
+      if(!validTypes.includes(file.type) && !file.name.endsWith('.csv')) {
+        alert('Please upload a valid CSV file.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = parseCSV(ev.target.result);
+          if(parsed.headers.length === 0) throw new Error('No headers found');
+          csvHeaders = parsed.headers;
+          csvRows = parsed.rows;
+          csvData = parsed;
+          renderDatasetPreview();
+          appendExperimentLog('CSV dataset loaded successfully.');
+        } catch(err) {
+          alert('Error parsing CSV: ' + err.message);
+          appendExperimentLog('CSV parsing error: ' + err.message);
+          csvData = null;
+          csvHeaders = [];
+          csvRows = [];
+          renderDatasetPreview();
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // ------- Experiment buttons -----
+    runExperimentBtn.addEventListener('click', () => {
+      if(experimentRunning) {
+        alert('Experiment already running.');
+        return;
+      }
+      simulateKaggleExperiment(experimentCmdInput.value.trim() || '# No commands defined...');
+    });
+    cancelExperimentBtn.addEventListener('click', () => {
+      if(experimentRunning) {
+        experimentCancelFlag = true;
+        appendExperimentLog('Canceling experiment...');
+      }
+    });
+
+    // ------- AI Assistant chat -------
+    sendBtn.addEventListener('click', sendUserMessage);
+    userInput.addEventListener('keydown', e => {
+      if(e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendUserMessage();
+      }
+    });
+
+    if(SpeechRecognition) {
+      recognizer = new SpeechRecognition();
+      recognizer.lang = 'en-US';
+      recognizer.continuous = false;
+      recognizer.interimResults = false;
+
+      recognizer.addEventListener('result', e => {
+        const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+        userInput.value = transcript;
+        userInput.focus();
+      });
+      recognizer.addEventListener('end', () => {
+        if(voiceActive) recognizer.start();
+      });
+    } else {
+      voiceToggleBtn.disabled = true;
+      voiceToggleBtn.title = 'Speech recognition not supported by this browser';
+    }
+
+    voiceToggleBtn.addEventListener('click', () => {
+      if(!recognizer) return;
+      if(voiceActive) {
+        recognizer.stop();
+        voiceActive = false;
+        voiceToggleBtn.textContent = '🎙️';
+      } else {
+        recognizer.start();
+        voiceActive = true;
+        voiceToggleBtn.textContent = '🛑';
+      }
+    });
+
+    // Send user message to chat and simulate AI reply
+    function sendUserMessage() {
+      const text = userInput.value.trim();
+      if(!text) return;
+      appendChatMsg(text, 'user');
+      userInput.value = '';
+      simulateAIResponse(text);
+    }
+
+    function appendChatMsg(msg, sender) {
+      const div = document.createElement('div');
+      div.className = 'chat-message ' + sender;
+      div.textContent = msg;
+      chatWindow.appendChild(div);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    async function simulateAIResponse(userText) {
+      appendChatMsg('...', 'ai');
+      await delay(1200);
+      const lastAI = chatWindow.querySelector('.chat-message.ai:last-child');
+      if(lastAI) lastAI.remove();
+
+      // Simple keyword-based pseudo AI responses
+      const lowerText = userText.toLowerCase();
+      let reply = "I'm your AI assistant. Ask me about data analysis, experiments, or reports.";
+
+      if(lowerText.includes('hello') || lowerText.includes('hi')) {
+        reply = 'Hello! How can I assist you with your data projects today?';
+      } else if(lowerText.includes('experiment') || lowerText.includes('kaggle')) {
+        reply = 'To run an experiment, upload a CSV, set your Kaggle notebook ID, and run the experiment in the Experiment Manager tab.';
+      } else if(lowerText.includes('report')) {
+        reply = 'In Reporting, you can write summaries and generate reports to share with stakeholders.';
+      } else if(lowerText.includes('chart')) {
+        reply = 'Charts visualize your data. You can inspect them in the Reporting & Visualization tab.';
+      } else if(lowerText.includes('help')) {
+        reply = 'Upload data, run experiments, visualize results, generate reports, and chat with me anytime.';
+      }
+
+      appendChatMsg(reply, 'ai');
+      speakText(reply);
+    }
+
+    // Text-to-speech for AI
+    function speakText(text) {
+      if(!window.speechSynthesis) return;
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'en-US';
+      utter.rate = 1;
+      try {
+        speechSynthesis.speak(utter);
+      } catch {}
+    }
+
+    // Reset app button
+    resetBtn.addEventListener('click', () => {
+      if(confirm('Resetting will clear all data, logs, and chats. Continue?')) {
+        csvData = null;
+        csvHeaders = [];
+        csvRows = [];
+        renderDatasetPreview();
+        experimentStatus.textContent = 'Experiment logs will appear here...';
+        experimentLogLines.length = 0;
+        experimentCancelFlag = false;
+        experimentRunning = false;
+        cancelExperimentBtn.style.display = 'none';
+        experimentCmdInput.value = '';
+        reportTextArea.value = '';
+        clearCanvas();
+        clearTable();
+        chatWindow.innerHTML = '';
+        csvFileInput.value = '';
+        clearDashboardWidgets();
+      }
+    });
+
+    // Clear canvas
+    function clearCanvas() {
+      ctx.clearRect(0, 0, resultsChartCanvas.width, resultsChartCanvas.height);
+    }
+
+    // Clear results table
+    function clearTable() {
+      resultsTable.innerHTML = '';
+    }
+
+    // Keyboard navigation for tab switching (left/right arrow)
+    document.addEventListener('keydown', evt => {
+      if(evt.altKey || evt.ctrlKey || evt.metaKey || evt.shiftKey) return;
+      if(activeTabId.startsWith('tab-')) {
+        let currentIdx = Array.from(tabs).findIndex(t => t.id === activeTabId);
+        if(evt.key === 'ArrowRight') {
+          currentIdx = (currentIdx + 1) % tabs.length;
+          switchTab(tabs[currentIdx].id);
+          tabs[currentIdx].focus();
+          evt.preventDefault();
+        } else if(evt.key === 'ArrowLeft') {
+          currentIdx = (currentIdx -1 + tabs.length) % tabs.length;
+          switchTab(tabs[currentIdx].id);
+          tabs[currentIdx].focus();
+          evt.preventDefault();
+        }
+      }
+    });
+
+    // Initial active tab
+    switchTab(activeTabId);
+
+  })();
+</script>
+
+</body>
+</html>

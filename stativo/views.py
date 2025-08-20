@@ -24,6 +24,13 @@ load_dotenv(find_dotenv())
 
 login(os.getenv("HUGGINGFACE_API_KEY"))
 
+
+def home(request):
+    """
+    Render the home page.
+    """
+    return render(request, "dashboard/home.html")
+
 # --- Tools --- #
 @tool
 def simulate_revenue_metrics_explicit(n: int = 100) -> pd.DataFrame:
