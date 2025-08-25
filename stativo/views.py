@@ -16,6 +16,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
+
+from .serializers import NaturalLanguageQuerySerializer, NaturalLanguageResponseSerializer
+from .firebase_agent import FirestoreAgentService
+
 from smolagents import tool, HfApiModel, CodeAgent
 from huggingface_hub import login
 from dotenv import load_dotenv, find_dotenv
@@ -187,3 +191,31 @@ class BooksyLLMAnalysisAPIView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+class FirestoreQueryAPIView(APIView):
+    """
+    POST endpoint that accepts natural language query in JSON payload
+    and returns natural language response from Firestore AI agent.
+    """
+
+    def post(self, request):
+        serializer = NaturalLanguageQuerySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        query = serializer.validated_data["query"]
+
+        try:
+            # Initialize agent service lazily inside request method to avoid __signature__ problem
+            agent_service = FirestoreAgentService()
+
+            response_text = agent_service.ask(query)
+            response_serializer = NaturalLanguageResponseSerializer(data={"response": response_text})
+            response_serializer.is_valid(raise_exception=True)
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            # Log the exception in production code
+            return Response(
+                {"detail": f"Error processing query: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

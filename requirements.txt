@@ -2,12 +2,20 @@
 
 #python 3.11
 
+# core django stuff
 django
 django-cors-headers
 djangorestframework
 djangorestframework-simplejwt
 
+# web server
 gunicorn
+
+# ai 
+langchain
+langchain-community
+
+# database
 psycopg2-binary
 
 pandas==2.2.3

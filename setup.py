@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='stativiz',
-    version='1.0.17',
+    version='1.0.18',
     author='Martin Luther Bironga',
     description='Stativiz is a library for statistical analysis, visualization and modeling.',
     long_description=open('README.md').read(),
