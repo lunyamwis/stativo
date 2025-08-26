@@ -1,0 +1,98 @@
+# imports
+import os
+import logging
+import firebase_admin
+from google.cloud import firestore
+from google.oauth2 import service_account
+from datetime import datetime, timedelta
+
+# Initialize Firestore DB
+credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+if not credentials_path:
+    raise EnvironmentError("GOOGLE_APPLICATION_CREDENTIALS not set in environment")
+
+credentials = service_account.Credentials.from_service_account_file(credentials_path)
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(credentials)
+db = firestore.Client(database='default',credentials=credentials)
+
+
+
+# Query: Show me the conversion rate from leads to customers over the last 60 days
+sixty_days_ago = datetime.now() - timedelta(days=60)
+email_query = db.collection('email_queue').where('createdAt','>=',sixty_days_ago)
+docs = email_query.stream()
+
+outreach_count = 0
+other_emailTypeCount = 0
+leads_count_email = 0
+interactions_count_email = 0
+for i,doc in enumerate(docs):
+    data = doc.to_dict()
+
+    if 'emailType' in data:
+        if data['emailType'] == 'outreach':
+            outreach_count += 1
+        elif data['emailType'] != 'outreach':
+            other_emailTypeCount += 1
+
+    if 'createdAt' in data:
+        leads_count_email += 1
+        if 'lastAttempt' in data:
+            interactions_count_email += 1
+
+print(f"Query: Show me the conversion rate from leads to customers over the last 60 days, Email Queue - Leads: {leads_count_email}, Interactions: {interactions_count_email}, Conversion Rate: {other_emailTypeCount / outreach_count if outreach_count > 0 else 0:.2%}")
+
+
+# Query: What's the average time between first contact and any response from the lead?
+query = db.collection('email_queue').stream()                                                                                                                 
+results = [(doc.get('createdAt'), doc.get('updatedAt')) for doc in query if doc.get('updatedAt') is not None] 
+print(f"Query: What's the average time between first contact and any response from the lead?, Email Queue - Total Leads: {len(results)}")
+query = db.collection('instagram_threads').stream()
+results = [(doc.get('lastOutboundAt'), doc.get('lastMessage')) for doc in query]
+print(f"Query: What's the average time between first contact and any response from the lead?, Instagram Threads - Total Threads: {len(results)}")
+
+# Query: How many leads were added in the last 30 days, and how many of those have been contacted at least once?
+thirty_days_ago = datetime.now() - timedelta(days=30)
+email_query = db.collection('email_queue').where('createdAt','>=',thirty_days_ago)
+docs = email_query.stream()
+leads_count_email = 0
+interactions_count_email = 0
+for i,doc in enumerate(docs):
+    data = doc.to_dict()
+    if 'createdAt' in data:
+        leads_count_email += 1
+        if 'lastAttempt' in data:
+            interactions_count_email += 1       
+print(f"Query: How many leads were added in the last 30 days, and how many of those have been contacted at least once?, Email Queue - Leads: {leads_count_email}, Contacted: {interactions_count_email}")
+
+
+# Query: How many leads went cold without any response in the past 3 months?
+three_months_ago = datetime.now() - timedelta(days=90)
+email_query = db.collection('email_queue').where('createdAt','>=',three_months_ago)
+docs = email_query.stream()
+cold_leads_count_email = 0
+for i,doc in enumerate(docs):
+    data = doc.to_dict()
+    if 'createdAt' in data and 'lastAttempt' not in data:
+        cold_leads_count_email += 1
+print(f"Query: How many leads went cold without any response in the past 3 months?, Email Queue - Cold Leads: {cold_leads_count_email}")
+
+
+# Query: Which email types have the highest response rate?
+email_query = db.collection('email_queue').stream()
+email_type_stats = {}
+for i,doc in enumerate(email_query):
+    data = doc.to_dict()
+    if 'emailType' in data:
+        email_type = data['emailType']
+        if email_type not in email_type_stats:
+            email_type_stats[email_type] = {'total': 0, 'responded': 0}
+        email_type_stats[email_type]['total'] += 1
+        if 'lastAttempt' in data:
+            email_type_stats[email_type]['responded'] += 1
+print("Query: Which email types have the highest response rate?, Email Queue - Response Rates by Email Type:")
+for email_type, stats in email_type_stats.items():
+    response_rate = stats['responded'] / stats['total'] if stats['total'] > 0 else 0
+    print(f"  {email_type}: {response_rate:.2%} ({stats['responded']} responses out of {stats['total']} emails)")
+    
